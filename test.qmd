@@ -1,0 +1,79 @@
+---
+title: "Test ESM"
+subtitle: "Izabela Ferreira da Silva"
+format: html
+editor: visual
+---
+
+**Load packages**
+
+```{r}
+library(readxl)
+library(tidyverse)
+```
+
+**Data load**
+
+```{r}
+df <- read_csv("~/test.csv")
+glimpse(df)
+```
+
+**Exploration**
+
+```{r}
+# Maximum data time point
+max(df$data.obstime)
+
+#Rename columns
+df <- df %>% 
+  rename(date = data.obstime,
+         country = data.ref_area,
+         title = data.title,
+         value = data.obsvalue)
+
+
+# Get all countries in the list
+ country_list <- unique(df$country)
+ country_list
+ 
+# All variables to which values are present
+ variables <- unique(df$title)
+ variables
+ 
+```
+
+**Filtering**
+
+```{r}
+# Only Loans up to 1M, what is the maximum value?
+ df_loan <- df %>% 
+   mutate(title = if_else(str_detect(title,"up"),"loan_up_1M",title)) %>% 
+   filter(str_detect(title,"up")) %>% 
+  slice_max(value)
+print(df_loan)
+
+# Only Loans up to 1M, values per country?
+
+df_per_country <- df %>% 
+   mutate(title = if_else(str_detect(title,"up"),"loan_up_1M",title)) %>% 
+   filter(str_detect(title,"up")) %>% 
+   group_by(country) %>% 
+   slice_max(value)
+ 
+print(df_per_country)
+
+```
+
+
+**Dealing with missing data**
+
+```{r}
+df_missing <- df %>% 
+  complete(date) %>% 
+  group_by(country,title) %>% 
+  mutate(is_interpolated = if_else(is.na(value),1,0),
+         value = if_else(is.na(value),mean(value,na.rm=T),value))
+
+df_missing
+```
